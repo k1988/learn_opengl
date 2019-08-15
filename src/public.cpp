@@ -42,6 +42,27 @@ bool init_glcontext()
 	return true;
 }
 
+unsigned int create_vertex_shader_from_source(const char* vertexShaderSource)
+{
+	auto vertexShader = glCreateShader(GL_VERTEX_SHADER);
+	// 将着色器源代码附加到着色器对象并编译着色器
+	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+	glCompileShader(vertexShader);
+
+	// 调用后检查编译是否成功 glCompileShader如果没有，发现了什么错误，所以你可以修复它们。检查编译时错误的完成如下：
+	int  success;
+	char infoLog[512];
+	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+		std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+		glDeleteShader(vertexShader);
+		return 0;
+	}
+	return vertexShader;
+}
+
 unsigned mk_link_program(const std::initializer_list<unsigned> shaders)
 {
 	int success;

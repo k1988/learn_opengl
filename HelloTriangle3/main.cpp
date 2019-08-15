@@ -1,4 +1,4 @@
-// 使用两种片断着色器，使用同一个顶点数组(6个)中的不同顶点(前3和后3)创建两个颜色不同的三角形
+// 使用两个不同的VAO和VBO为其数据创建相同的2个三角形
 //
 
 #include "public.h"
@@ -34,14 +34,23 @@ void main()
 } 
 )";
 
-void create_VBO()
+void create_VBO1()
 {
-	// 两个3角型，6个顶点
 	float vertices[] = {
 		-1.0f, -0.5f, 0.0f,
 		0.0f, -0.5f, 0.0f,
 		-0.5f,  0.5f, 0.0f,
+	};
+	unsigned int VBO;
+	glGenBuffers(1, &VBO);
+	// 顶点数据复制到缓冲区内存中的函数
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+}
 
+void create_VBO2()
+{
+	float vertices[] = {
 		0.0f, -0.5f, 0.0f,
 		0.5f, 0.5f, 0.0f,
 		1.0f, -0.5f, 0.0f,
@@ -53,43 +62,50 @@ void create_VBO()
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 }
 
-unsigned int  VAO;
+
+unsigned int  VAO,VAO2;
 unsigned int vertexShader;
-unsigned int fragmentShader;
 unsigned int shaderProgram;
 unsigned int shaderProgramGreen;
 
+
 bool before_render()
 {
-	create_VBO();
-
+	create_VBO1();
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
-
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
-	// note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-	// 在glVertexAttribPointer 之后就可以先解除绑定了
+
+	/*
+	可以调用清除，也可以不调用。因为后面会覆盖
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	// You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
-   // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
 	glBindVertexArray(0);
+	*/
 
+	create_VBO2();
+	glGenVertexArrays(1, &VAO2);
+	glBindVertexArray(VAO2);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	// 清除绑定的VBO和VAO
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+	
 	// 创建一个着色器对象，再次由ID引用
-	vertexShader = create_vertex_shader_from_source(vertexShaderSource);
-	if (!vertexShader) return false;
+	const auto vertexShader = create_vertex_shader_from_source(vertexShaderSource);
+	if (!(vertexShader))
+	{
+		return false;
+	}
 
 	// 编译片段着色器	
-	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-	glCompileShader(fragmentShader);
+	const auto fragmentShader = create_fragment_shader_from_source(fragmentShaderSource);
 
 	// 编译片段着色器 - 绿色	
-	auto fragmentShaderGreen = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShaderGreen, 1, &fragmentShaderSourceGreen, NULL);
-	glCompileShader(fragmentShaderGreen);
+	const auto fragmentShaderGreen = create_fragment_shader_from_source(fragmentShaderSourceGreen);
 
 	// 链接两种程序
 	shaderProgram = mk_link_program({ fragmentShader, vertexShader });
@@ -113,6 +129,7 @@ bool render()
 
 
 	glUseProgram(shaderProgramGreen);
-	glDrawArrays(GL_TRIANGLES, 3, 3);
+	glBindVertexArray(VAO2);
+	glDrawArrays(GL_TRIANGLES, 0, 3);
 	return true;
 }

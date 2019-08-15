@@ -13,6 +13,14 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 */
 void processInput(GLFWwindow *window);
 
+/** 从字符串声明的shader中创建一个顶点着色器(GL_VERTEX_SHADER)
+*/
+unsigned int create_vertex_shader_from_source(const char* vertexShaderSource);
+
+/** 从字符串声明的shader中创建一个片断着色器(GL_FRAGMENT_SHADER)
+*/
+unsigned int create_fragment_shader_from_source(const char* fragmentShaderSource);
+
 /** 创建一个program，并且将参数中的多个shader都attach进去
 @return 返回新建的program，如果创建成功或附加失败，则返回nullptr
 */
