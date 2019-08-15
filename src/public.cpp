@@ -42,6 +42,33 @@ bool init_glcontext()
 	return true;
 }
 
+unsigned mk_link_program(const std::initializer_list<unsigned> shaders)
+{
+	int success;
+	char infoLog[512];
+	const unsigned int shaderProgram = glCreateProgram();
+
+	// 将先前编译的着色器附加到程序对象，然后将它们链接起来
+	for (auto it : shaders)
+	{
+		glAttachShader(shaderProgram, it);
+	}
+
+	glLinkProgram(shaderProgram);
+
+	// check for linking errors
+	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+	if (!success)
+	{
+		glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+		std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+		glDeleteProgram(shaderProgram);
+		return 0;
+	}
+	return shaderProgram;
+}
+
+
 int main()
 {
 	if (!init_glcontext())
